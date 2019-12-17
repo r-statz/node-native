@@ -1,10 +1,11 @@
 const express = require('express');
 const app = express();
 // const env = require('dotenv').config()
+const cookieSession = require('cookie-session');
+
 const port = process.env.PORT || 3000;
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const db = require('./db');
 
 app.disable('x-powered-by');
 app.use(bodyParser.json());
@@ -12,25 +13,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(express.static('public'));
 app.use(cors());
-
-app.use('/', async (req, res, next) => {
-  console.log('Hit the images route!');
-  try {
-    const images = await db('images').select('*');
-    res.json(images);
-  } catch (e) {
-    console.log(e);
-  }
-});
-app.use('/:id', async (req, res, next) => {
-  try {
-    const image = await db('images').select('*').where('id', req.params.id);
-    res.json(images);
-  } catch (e) {
-    console.log(e);
-  }
-});
-
+app.use(cookieSession({
+  name: 'session',
+  secure: process.env.ENSURE_SSL === 'true',
+  keys: [process.env.SESSION_KEY_1, process.env.SESSION_KEY_2, process.env.SESSION_KEY_3],
+  maxAge: 12 * 60 * 60 * 1000
+}));
+app.use('/api/', require('./sessions.router'));
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;
